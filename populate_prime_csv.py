@@ -19,7 +19,6 @@ import netmiko
 import argparse
 import getpass
 import openpyxl
-from openpyxl.utils import get_column_letter
 import logging
 
 # Set up argument parser and help info
@@ -46,13 +45,18 @@ logger.addHandler(handler)
 def open_file(file):
     wb = openpyxl.load_workbook(file)
     ws1 = wb.active
-#    ws2 =
+    ws2 = wb.worksheets[1]
     input_list = []
+    command_dict = {}
     for col in range(2, ws1.max_column + 1):
-        column_letter = get_column_letter(col)
+        column_letter = openpyxl.utils.get_column_letter(col)
         device = ws1[column_letter + '13'].value
         input_list.append(device)
-    return input_list
+    for row in range(2, ws2.max_row + 1):
+        variable = ws2['A' + str(row)].value
+        command = ws2['B' + str(row)].value
+        command_dict[variable] = command
+    return input_list, command_dict
 
 
 def get_creds():  # Prompt for credentials
@@ -73,7 +77,7 @@ def obtain_output(connection, command):
 
 def main():
     template = args.template[0]
-    device_list = open_file(template)
+    device_list, command_dict = open_file(template)
 
     username, password = get_creds()
 
